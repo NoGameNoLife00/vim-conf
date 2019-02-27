@@ -1,0 +1,211 @@
+autocmd BufWritePost $MYVIMRC source $MYVIMRC
+colorscheme molokai
+let mapleader = ','
+set noswapfile
+nnoremap <C-l> gt
+nnoremap <C-h> gT
+nnoremap <leader>t : tabe<CR>
+::map <F4> :Ack<space>
+autocmd StdinReadPre * let s:std_in=1  
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif  
+let neomplete#enable_at_startup = 1
+let g:ctrlsf_default_view_mode = 'compact'
+let g:Tlist_Ctags_Cmd='/usr/bin/ctags'
+let g:tagbar_ctags_bin='/usr/bin/ctags'
+let g:ctrlp_working_path_mode = 'ra'
+set tabstop=4
+set shiftwidth=4  
+set so=7
+
+let NERDTreeIgnore=['\.pyc','\~$','\.swp','\.o']
+
+" 取消备份。  
+"urn backup off, since most stuff is in SVN, git et.c anyway...  
+set nobackup  
+set nowb  
+set noswapfile  
+"贴时保持格式  
+"set paste  
+"- 则点击光标不会换,用于复制  
+"set mouse-=a           " 在所有的模式下面打开鼠标。  
+set selection=exclusive    
+set selectmode=mouse,key  
+"为方便复制，用<F6>开启/关闭行号显示:  
+nnoremap <F6> :set nonumber!<CR>:set foldcolumn=0<CR>  
+
+" Thisutosave=5 sets the default value for all buffers.
+:let g:lua_compiler_name = '/usr/local/bin/luac'
+"
+" " This is how you change the value for one buffer.
+:let b:lua_compiler_name = '/home/chentao/soft/lualint/lualint'
+
+:let $LUA_CPATH = '/usr/local/lib/lua/5.3/?.so'
+:let g:lua_complete_omni = 1 "支持c-x c-o快捷键
+let g:lua_check_syntax = 0
+map F <Plug>CtrlSFPrompt
+vmap <leader>g  :Ag<space>
+" set completeopt=longest,menuone
+
+" for easy using sliver search
+nmap <leader>f :norm yiw<CR>:Ag! -t -Q "<C-R>""
+" Locate and return character "above" current cursor position.
+ function! LookUpwards()
+    let column_num = virtcol('.')
+    let target_pattern = '\%' . column_num . 'v.'
+    let target_line_num = search(target_pattern . '*\S', 'bnW')
+
+
+    if !target_line_num
+        return ""
+    else
+        return matchstr(getline(target_line_num), target_pattern)
+    endif
+    endfunction
+
+imap <silent> <C-Y> <C-R><C-R>=LookUpwards()<CR>
+
+
+
+
+"get project root，自动查找svn, hg, git 项目根目录，生成cscope.out tags文件
+function! FindProjectRoot()
+    let pathMaker='%:p'
+    while(len(expand(pathMaker))>len(expand(pathMaker.":h")))
+        let pathMaker=pathMaker.':h'
+        let svnRoot = expand(pathMaker).'/.svn'
+        let gitRoot = expand(pathMaker).'/.git'
+        if filereadable(svnRoot)||isdirectory(svnRoot) || filereadable(gitRoot)||isdirectory(gitRoot)
+            return expand(pathMaker)
+        endif
+    endwhile
+    let pathMaker='%:p'
+    return expand(pathMaker.':h')
+endfunction
+let project_root = FindProjectRoot() 
+
+"F2自动生成tags并设置tags文件
+exec ":set tags=tags,".g:project_root."/tags,./tags"
+exec ":cs add ".g:project_root."/cscope.out"
+map <F2> :call BuildTags() <CR>
+
+"定义buildtags函数
+func! BuildTags()
+    exec ":w"
+    exec ":! ~/.makecscope ".g:project_root
+    exec ":set tags=tags,".g:project_root."/tags,./tags"
+    exec ":set tags+=/home/git/gflags/tags"
+    exec ":set tags+=/usr/include/tags"
+    exec ":set tags+=/home/git/linux/tags"
+endfunc
+" 结束定义buildtags
+
+"lua ctags 跳转优化
+map <F9> :call DelLuakeyword() <CR>
+map <F10> :call AddLuakeyword() <CR>
+"lua keywork
+func! AddLuakeyword()
+    if &filetype == 'lua'
+        exec ":set iskeyword+=."
+        exec ":set iskeyword+=:"
+    endif
+endfunc
+func! DelLuakeyword()
+    if &filetype == 'lua'
+        exec ":set iskeyword-=."
+        exec ":set iskeyword-=:"
+    endif
+endfunc
+"lua keywork
+augroup filetype_lua
+    autocmd!
+    autocmd FileType lua setlocal iskeyword+=.
+    autocmd FileType lua setlocal iskeyword+=:
+augroup END
+
+
+"set cscopetag
+"set csto=0
+
+"if filereadable("cscope.out")
+    "cs add cscope.out   
+"elseif $CSCOPE_DB != ""
+    "cs add $CSCOPE_DB
+"endif
+"set cscopeverbose
+
+nmap zs :cs find s <C-R>=expand("<cword>")<CR><CR>
+nmap zg :cs find g <C-R>=expand("<cword>")<CR><CR>
+nmap zc :cs find c <C-R>=expand("<cword>")<CR><CR>
+nmap zt :cs find t <C-R>=expand("<cword>")<CR><CR>
+nmap ze :cs find e <C-R>=expand("<cword>")<CR><CR>
+nmap zf :cs find f <C-R>=expand("<cfile>")<CR><CR>
+nmap zi :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+nmap zd :cs find d <C-R>=expand("<cword>")<CR><CR>
+"nmap <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>  
+"nmap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>  
+"nmap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>  
+"nmap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>  
+"
+
+" 替换函数。参数说明：
+" confirm：是否替换前逐一确认
+" wholeword：是否整词匹配
+" replace：被替换字符串
+function! Replace(confirm, wholeword, replace)
+    wa
+    let flag = ''
+    if a:confirm
+        let flag .= 'gec'
+    else
+        let flag .= 'ge'
+    endif
+    let search = ''
+    if a:wholeword
+        let search .= '\<' . escape(expand('<cword>'), '/\.*$^~[') . '\>'
+    else
+        let search .= expand('<cword>')
+    endif
+    let replace = escape(a:replace, '/\&~')
+	execute 'args *.lua'
+    execute 'argdo %s/' . search . '/' . replace . '/' . flag . '| update'
+endfunction
+" 不确认、非整词
+nnoremap <Leader>R :call Replace(0, 0, input('Replace '.expand('<cword>').' with: '))<CR>
+" 不确认、整词
+nnoremap <Leader>rw :call Replace(0, 1, input('Replace '.expand('<cword>').' with: '))<CR>
+" 确认、非整词
+nnoremap <Leader>rc :call Replace(1, 0, input('Replace '.expand('<cword>').' with: '))<CR>
+" 确认、整词
+nnoremap <Leader>rcw :call Replace(1, 1, input('Replace '.expand('<cword>').' with: '))<CR>
+nnoremap <Leader>rwc :call Replace(1, 1, input('Replace '.expand('<cword>').' with: '))<CR>
+
+"###################    set file head start  #########################
+"autocmd创建新文件自动调用setfilehead()函数
+autocmd BufNewFile *.v,*.sv,*.cpp,*.c,*.h exec ":call Setfilehead()"
+func Setfilehead()
+    call append(0, '--------------------------------')
+    call append(1, '--    Filename: '.expand("%"))
+    call append(2, '--      Author: chentao')
+    call append(3, '-- Description: ---')
+    call append(4, '--      Create: '.strftime("%Y-%m-%d %H:%M:%S"))
+    call append(5, '---------------------------------------------')
+endfunc
+
+"map F2 to creat file head comment
+"映射F2快捷键，生成后跳转至第10行，然后使用o进入vim的插入模式
+map <F12> :call Setfilehead()<CR>:6<CR>o
+"###################    set file head end   ##########################
+
+
+" search word under cursor, the pattern is treated as regex
+noremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e %s ", expand("<cword>"))<CR>
+" search word under cursor, the pattern is treated as regex,
+" append the result to previous search results.
+noremap <C-G> :<C-U><C-R>=printf("Leaderf! rg --append -e %s ", expand("<cword>"))<CR>
+" search word under cursor literally only in current buffer
+noremap <C-B> :<C-U><C-R>=printf("Leaderf! rg -F --current-buffer -e %s ", expand("<cword>"))<CR>
+" search visually selected text literally and enter normal mode directly,
+" don't quit LeaderF after accepting an entry
+xnoremap gf :<C-U><C-R>=printf("Leaderf! rg -F --stayOpen -e %s ", leaderf#Rg#visual())<CR>
+" recall last search. If the result window is closed, reopen it.
+noremap go :<C-U>Leaderf! rg --stayOpen --recall<CR>
