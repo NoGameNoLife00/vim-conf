@@ -1,0 +1,17 @@
+project_root=$1
+if ! [ ${project_root}   ]; then
+    echo "no project_root"
+project_root=$(pwd)
+    echo ${project_root}
+    fi
+    cd ${project_root}
+    find ./ -name 'tags' -exec rm -rf {} \;
+    rm -rf cscope.*
+    rm -rf tags
+#find + abs path
+    find ${project_root} -name '*.lua' -o -name '*.l' -o -name '*.h' -o -name '*.c' -o -name '*.cpp' > cscope.file
+    cscope -Rbkq -i cscope.file
+#abs path
+    /usr/bin/ctags -R ${project_root}
+
+

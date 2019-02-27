@@ -1,0 +1,6 @@
+Bundle 'dyng/ctrlsf.vim'
+Bundle 'lua.vim'
+Bundle 'xolox/vim-misc'
+Bundle 'xolox/vim-lua-ftplugin'
+Bundle 'rking/ag.vim'
+Bundle 'Yggdroot/LeaderF'
